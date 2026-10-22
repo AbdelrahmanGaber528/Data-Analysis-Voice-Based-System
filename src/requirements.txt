@@ -7,3 +7,4 @@ langchain-core
 pandas
 pydantic
 SQLAlchemy
+pydantic-settings
