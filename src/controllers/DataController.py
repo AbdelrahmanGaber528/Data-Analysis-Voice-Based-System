@@ -14,10 +14,10 @@ class DataController(BaseController):
         extension = file.filename.split(".")[-1].lower()
         
         if extension not in self.app_settings.FILE_ALLOWED_EXTENSION :
-            return False
+            return False , "File type not allowed"
         
         if file.size > self.app_settings.FILE_MAX_SIZE * self.scale : 
-            return False
+            return False , "File size Exceeded"
         
         
-        return True
+        return True , "Success"
