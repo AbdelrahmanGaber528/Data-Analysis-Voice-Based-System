@@ -20,9 +20,3 @@ async def startup():
         "APP Name" : app_name ,
         "APP Version" : app_version
         }
-    
-
-@base_router.get("/health")
-async def check_health():
-
-    return {"status":"OK , server on"}

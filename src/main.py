@@ -6,3 +6,12 @@ app = FastAPI(title="DA Voice System" , description="data analysis platform to u
 
 
 app.include_router(base_router)
+
+
+
+
+
+@app.get("/health")
+async def check_health():
+    
+    return {"status":"OK , server on"}
