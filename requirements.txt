@@ -1,0 +1,9 @@
+faster-whisper
+python-dotenv
+fastapi
+uvicorn
+langchain-openai
+langchain-core
+pandas
+pydantic
+SQLAlchemy
