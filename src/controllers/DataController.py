@@ -1,5 +1,6 @@
 from .BaseController import BaseController
 from fastapi import UploadFile
+from models import ResponseEnum
 
 
 class DataController(BaseController):
@@ -14,10 +15,10 @@ class DataController(BaseController):
         extension = file.filename.split(".")[-1].lower()
         
         if extension not in self.app_settings.FILE_ALLOWED_EXTENSION :
-            return False , "File type not allowed"
+            return False , ResponseEnum.ResponseMessage.FILE_TYPE_NOT_SUPPORTED
         
-        if file.size > self.app_settings.FILE_MAX_SIZE * self.scale : 
-            return False , "File size Exceeded"
+        if file.size > self.app_settings.FILE_MAX_SIZE * self.scale :
+            return False , ResponseEnum.ResponseMessage.FILE_SIZE_EXCEEDED
         
         
-        return True , "Success"
+        return True , ResponseEnum.ResponseMessage.FILE_UPLOAD_SUCCESS
