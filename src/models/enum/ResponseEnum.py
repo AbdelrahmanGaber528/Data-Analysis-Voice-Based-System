@@ -19,3 +19,9 @@ class ResponseMessage(str, Enum):
     AUDIO_EMPTY_TRANSCRIPT = "Audio_Empty_Transcript"
     
     AUDIO_UPLOADED_SUCCESS = "Audio_Upload_Success"
+    
+    DATASET_NOT_FOUND = "Dataset_Not_Found"
+    
+    ANALYSIS_EMPTY_QUESTION = "Analysis_Empty_Question"
+    ANALYSIS_INVALID_REQUEST = "Analysis_Invalid_Request"
+    ANALYSIS_FAILED = "Analysis_Failed"

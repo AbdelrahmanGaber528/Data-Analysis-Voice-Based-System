@@ -1,12 +1,12 @@
-from fastapi import FastAPI , Depends , UploadFile , APIRouter , status
+from fastapi import FastAPI , Depends , UploadFile , APIRouter , Request , status
 from fastapi.responses import JSONResponse
 from helpers.config import get_settings , Settings
-from controllers import DataController , DataSetController , ProcessController
+from controllers import DataController , DataSetController , ProcessController , SQLiteController
 from models import ResponseMessage
 import os
 import aiofiles
 import logging
-from .schema.data import ProcessRequest
+from .schema.data import ProcessRequest , AnalyzeRequest
 
 
 
@@ -101,3 +101,66 @@ async def process_file(dataset_id : str , process_request : ProcessRequest):
         
         
     return len(file_chunks) # for now ...
+
+
+
+@data_router.post("/analyze/{dataset_id}")
+def analyze_data(dataset_id : str , analyze_request : AnalyzeRequest , request : Request):
+    
+    question = analyze_request.question.strip()
+    
+    if not question :
+        
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "Message": ResponseMessage.ANALYSIS_EMPTY_QUESTION.value
+            }
+        )
+        
+        
+    try :
+        
+        sqlite_controller = SQLiteController(dataset_id)
+        
+        analysis_result = sqlite_controller.analyze(question , request.app.state.llm , limit=analyze_request.limit)
+        
+    except FileNotFoundError as e :
+        
+        logger.warning(f"Dataset not found for analysis : {e}.")
+        
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "Message": ResponseMessage.DATASET_NOT_FOUND.value
+            }
+        )
+        
+    except ValueError as e :
+        
+        logger.warning(f"Invalid analysis request : {e}.")
+        
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={
+                "Message": ResponseMessage.ANALYSIS_INVALID_REQUEST.value,
+                "Detail": str(e)
+            }
+        )
+        
+    except Exception as e :
+        
+        logger.error(f"Error While Analyzing Dataset : {e}.")
+        
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "Message": ResponseMessage.ANALYSIS_FAILED.value
+            }
+        )
+        
+        
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=analysis_result
+    )

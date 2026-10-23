@@ -8,3 +8,4 @@ pandas
 pydantic
 SQLAlchemy
 pydantic-settings
+openpyxl
