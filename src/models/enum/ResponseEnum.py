@@ -8,3 +8,5 @@ class ResponseMessage(Enum):
     FILE_SIZE_EXCEEDED = "File_Size_Exceeded"
     FILE_UPLOAD_SUCCESS = "File_Upload_Success"
     FILE_UPLOAD_FAILED = "File_Upload_Failed"
+    PROCESSING_SUCCESS = "Process File Success"
+    PROCESSING_FAILED = "Process File Failed"
