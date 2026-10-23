@@ -9,8 +9,12 @@ class Settings(BaseSettings):
     
     APP_NAME: str
     APP_VERSION: str
+    
+    LLM_BASE_URL: str
     API_KEY: str
     MODEL_NAME: str
+
+    HF_TOKEN: str | None = None
     
     FILE_ALLOWED_EXTENSION : list[str]
     FILE_MAX_SIZE : int

@@ -20,13 +20,13 @@ class AudioController(BaseController):
         
         extension = file.filename.split(".")[-1].lower()
 
-        if extension not in self.app_settings.AUDIO_ALLOWED_EXTENSION:
+        if extension not in self.app_settings.AUDIO_ALLOWED_EXTENSIONS:
             return False, ResponseMessage.AUDIO_TYPE_NOT_SUPPORTED.value
 
         if file.size and file.size > self.app_settings.AUDIO_MAX_SIZE * self.scale:
             return False, ResponseMessage.AUDIO_SIZE_EXCEEDED.value
 
-        return True, ResponseMessage.AUDIO_UPLOADED_SUCCESS
+        return True, ResponseMessage.AUDIO_UPLOADED_SUCCESS.value
 
 
 

@@ -2,7 +2,8 @@
 __pycache__/
 *.py[codz]
 *$py.class
-
+assets/datasets/*
+assets/datasets_test/*
 # C extensions
 *.so
 

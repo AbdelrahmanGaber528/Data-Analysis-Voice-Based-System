@@ -1,5 +1,5 @@
 from .BaseController import BaseController
-from .DataSetController import DataSetController
+from .DatasetController import DataSetController
 from models import ProcessExtension
 
 import os
@@ -40,24 +40,26 @@ class ProcessController(BaseController):
         
         
         
-        if file_extenstion == ProcessExtension.TXT :
+        if file_extenstion == ProcessExtension.TXT.value :
             
             return TextLoader(file_path=file_path , encoding="utf-8")
         
-        if file_extenstion == ProcessExtension.PDF :
+        if file_extenstion == ProcessExtension.PDF.value :
             
             return PyMuPDFLoader(file_path=file_path)
         
         
-        if file_extenstion == ProcessExtension.XLSX :
+        if file_extenstion == ProcessExtension.XLSX.value :
             
             return UnstructuredExcelLoader(file_path=file_path)
         
-        if file_extenstion == ProcessExtension.CSV : 
+        if file_extenstion == ProcessExtension.CSV.value : 
             
             return CSVLoader(file_path=file_path)
         
-        return None
+        raise ValueError(
+            f"Unsupported file extension: {file_extenstion}"
+        )   
     
     
     

@@ -38,7 +38,7 @@ async def upload_data(dataset_id : str , file : UploadFile , app_settings : Sett
             }
         )
         
-    dataset_dir_path = dataset_controller.get_dataset_path(dataset_id==dataset_id)
+    dataset_dir_path = dataset_controller.get_dataset_path(dataset_id)
     
     file_path = os.path.join( dataset_dir_path , file.filename )
     
@@ -57,7 +57,7 @@ async def upload_data(dataset_id : str , file : UploadFile , app_settings : Sett
         return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
-            "Message":ResponseMessage.File_Upload_Failed.value
+            "Message":ResponseMessage.FILE_UPLOAD_FAILED.value
         }
     )    
                
@@ -65,7 +65,7 @@ async def upload_data(dataset_id : str , file : UploadFile , app_settings : Sett
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
-            "Message":ResponseMessage.File_Upload_Success.value
+            "Message":ResponseMessage.FILE_UPLOAD_SUCCESS.value
         }
     )
     
@@ -74,15 +74,15 @@ async def upload_data(dataset_id : str , file : UploadFile , app_settings : Sett
     
     
     
-@data_router.post("/process/{item_id}")
-async def process_file(item_id : str , process_request : ProcessRequest):
+@data_router.post("/process/{dataset_id}")
+async def process_file(dataset_id : str , process_request : ProcessRequest):
     
     file_id = process_request.file_id
     chunk_size = process_request.chunk_size
     overlap_size = process_request.overlap_size
     
     
-    processs_controller = ProcessController(item_id)
+    processs_controller = ProcessController(dataset_id)
     
     file_content = processs_controller.get_file_content(file_id)
     
@@ -94,7 +94,9 @@ async def process_file(item_id : str , process_request : ProcessRequest):
         
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content=ResponseMessage.PROCESSING_FAILED
+            content={
+                "Message": ResponseMessage.PROCESSING_FAILED.value
+            }
         )
         
         
