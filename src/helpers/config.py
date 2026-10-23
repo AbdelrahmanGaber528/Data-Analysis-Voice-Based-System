@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     AUDIO_MAX_SIZE : int
     AUDIO_ALLOWED_EXTENSIONS : list[str]
     
+    WHISPER_MODEL_SIZE: str
+    WHISPER_DEVICE: str
+    WHISPER_COMPUTE_TYPE: str
+    
     
     model_config = SettingsConfigDict(
         env_file=SRC_DIR / ".env",
