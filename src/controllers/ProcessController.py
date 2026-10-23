@@ -1,7 +1,8 @@
 from .BaseController import BaseController
-from .ItemController import ItemController
-import os
+from .DataSetController import DataSetController
 from models import ProcessExtension
+
+import os
 
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import PyMuPDFLoader
@@ -13,13 +14,13 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 class ProcessController(BaseController):
     
-    def __init__(self , item_id : str):
+    def __init__(self , dataset_id : str):
         
         super().__init__()
         
-        self.item_id = item_id
-        self.item_controller = ItemController()
-        self.item_path = self.item_controller.get_item_path(item_id)
+        self.dataset_id = dataset_id
+        self.dataset_controller = DataSetController()
+        self.dataset_path = self.dataset_controller.get_dataset_path(dataset_id)
         
         
     
@@ -34,7 +35,7 @@ class ProcessController(BaseController):
         file_extenstion = self.get_file_extension(file_id=file_id)
         
         file_path = os.path.join(
-            self.item_path, file_id
+            self.dataset_path, file_id
         )
         
         

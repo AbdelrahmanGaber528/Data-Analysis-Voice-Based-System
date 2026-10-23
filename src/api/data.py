@@ -1,7 +1,7 @@
 from fastapi import FastAPI , Depends , UploadFile , APIRouter , status
 from fastapi.responses import JSONResponse
 from helpers.config import get_settings , Settings
-from controllers import DataController , ItemController , ProcessController
+from controllers import DataController , DataSetController , ProcessController
 from models import ResponseMessage
 import os
 import aiofiles
@@ -21,11 +21,11 @@ data_router = APIRouter(
 
 
 
-@data_router.post("/upload/{item_id}")
-async def upload_data(item_id : str , file : UploadFile , app_settings : Settings = Depends(get_settings)):
+@data_router.post("/upload/{dataset_id}")
+async def upload_data(dataset_id : str , file : UploadFile , app_settings : Settings = Depends(get_settings)):
 
     data_controller = DataController()
-    item_controller = ItemController()
+    dataset_controller = DataSetController()
     
     is_valid , result_message = data_controller.validate_uploaded_file(file=file)
     
@@ -38,9 +38,9 @@ async def upload_data(item_id : str , file : UploadFile , app_settings : Setting
             }
         )
         
-    item_dir_path = item_controller.get_item_path(item_id=item_id)
+    dataset_dir_path = dataset_controller.get_dataset_path(dataset_id==dataset_id)
     
-    file_path = os.path.join( item_dir_path , file.filename )
+    file_path = os.path.join( dataset_dir_path , file.filename )
     
     
     # we will load file chunk by chunk for effiecient memory loading
