@@ -276,7 +276,6 @@ Additional behavior:
 
 - **Base URL:** `http://localhost:5000`
 - **Interactive docs:** [`http://localhost:5000/docs`](http://localhost:5000/docs)
-- **OpenAPI schema:** `http://localhost:5000/openapi.json`
 
 | Method | Endpoint | Purpose |
 |---|---|---|
@@ -441,8 +440,6 @@ The response is the number of text chunks produced.
 │   ├── main.py                 # FastAPI app, lifespan, routers, static frontend
 │   ├── requirements.txt
 │   └── .env.example
-├── manage.sh                   # Start/stop/restart/status/logs for both services
-├── backend.log                 # Application log (created at runtime)
 ├── LICENSE
 └── README.md
 ```
@@ -508,11 +505,14 @@ WHISPER_COMPUTE_TYPE=int8
 
 `LLM_BASE_URL`, `API_KEY`, and `MODEL_NAME` must point to a working chat model. The default free model can be nondeterministic; the retry logic handles occasional irrelevant responses, but a stable model gives more consistent results.
 
-### 3. Run both services
+### 3. Run services
 
 ```bash
-chmod +x manage.sh
-./manage.sh up
+cd src
+uvicorn main:app --reload --host 0.0.0.0 --port 5000
+
+cd frontend
+python3 -m http.server 3000
 ```
 
 `manage.sh` starts the backend and a static frontend server, waits for both ports, and prints the URLs. Activate your virtual environment first; the script uses the active interpreter and `uvicorn`, falling back to the system installation.
