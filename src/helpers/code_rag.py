@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 import json
 import logging
 import re
-import threading
+from functools import lru_cache
 from pathlib import Path
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -14,89 +12,50 @@ from helpers.config import SRC_DIR, get_settings
 from helpers.corrections import is_correction_request
 from helpers.prompts import load_prompt
 
-
 logger = logging.getLogger(__name__)
 
-_store: CodeVectorStore | None = None
-_store_lock = threading.Lock()
+
+@lru_cache(maxsize=1)
+def get_code_vector_store():
+    settings = get_settings()
+    path = Path(settings.VECTOR_DB_DIR).expanduser()
+    return CodeVectorStore(
+        path=path if path.is_absolute() else SRC_DIR / path,
+        top_k=settings.RAG_TOP_K, min_score=settings.RAG_MIN_SCORE,
+        max_context_chars=settings.RAG_MAX_CONTEXT_CHARS,
+        chunk_chars=settings.CODE_CHUNK_SIZE, chunk_lines=settings.CODE_CHUNK_LINES,
+        overlap_lines=settings.CODE_CHUNK_OVERLAP,
+    )
 
 
-def resolve_store_path(value: str) -> Path:
-    path = Path(value).expanduser()
-    return path if path.is_absolute() else SRC_DIR / path
-
-
-def get_code_vector_store() -> CodeVectorStore:
-    """Return the required shared store, initializing it on first use."""
-
-    global _store
-
-    if _store is None:
-        with _store_lock:
-            if _store is None:
-                settings = get_settings()
-                _store = CodeVectorStore(
-                    path=resolve_store_path(settings.VECTOR_DB_DIR),
-                    top_k=settings.RAG_TOP_K,
-                    min_score=settings.RAG_MIN_SCORE,
-                    max_context_chars=settings.RAG_MAX_CONTEXT_CHARS,
-                    chunk_chars=settings.CODE_CHUNK_SIZE,
-                    chunk_lines=settings.CODE_CHUNK_LINES,
-                    overlap_lines=settings.CODE_CHUNK_OVERLAP,
-                )
-
-    return _store
-
-
-def _collect_code_blocks(query: str, code: str, context: str) -> list[dict]:
-    """Extract explicit and fenced code, keeping the first copy of each text."""
-
-    candidates = []
-
-    if code.strip():
-        candidates.append({"code": code, "language": ""})
-
+def _collect_code_blocks(query: str, code: str, context: str):
+    blocks = [{"code": code, "language": ""}] if code.strip() else []
     for source in (query, context):
-        candidates.extend(extract_code_blocks(source))
-
-    if not candidates and looks_like_code(query):
-        candidates.append({"code": query, "language": ""})
-
-    if not candidates and looks_like_code(context):
-        candidates.append({"code": context, "language": ""})
-
+        blocks.extend(extract_code_blocks(source))
+    if not blocks and looks_like_code(query):
+        blocks.append({"code": query, "language": ""})
+    if not blocks and looks_like_code(context):
+        blocks.append({"code": context, "language": ""})
     unique = {}
-
-    for candidate in candidates:
-        text = (candidate.get("code") or "").strip()
-
+    for block in blocks:
+        text = (block.get("code") or "").strip()
         if text:
-            unique.setdefault(normalize_text(text), {
-                "code": text,
-                "language": candidate.get("language") or "",
-            })
-
+            unique.setdefault(normalize_text(text),
+                              {"code": text, "language": block.get("language") or ""})
     return list(unique.values())
 
 
-def _json_payload(text: str) -> dict:
+def _json_payload(text: str):
     match = re.search(r"\{.*\}", text or "", re.DOTALL)
-
-    if not match:
-        return {}
-
     try:
-        return json.loads(match.group(0))
+        return json.loads(match.group(0)) if match else {}
     except json.JSONDecodeError:
         return {}
 
 
-def _evaluate_context(query: str, results: list[dict], llm) -> list[dict]:
-    """Ask the LLM to select the single best retrieved snippet."""
-
-    if not results or llm is None or not hasattr(llm, "model"):
+def _evaluate_context(query: str, results: list[dict], llm):
+    if not results or not hasattr(llm, "model"):
         return results[:1]
-
     candidates = "\n\n".join(
         f"[{index}] language={item['language']} source={item['source_type']}"
         f" score={item['score']:.2f}\n{item['content']}"
@@ -106,51 +65,30 @@ def _evaluate_context(query: str, results: list[dict], llm) -> list[dict]:
         SystemMessage(content=load_prompt("evaluator")),
         HumanMessage(content=f"USER REQUEST:\n{query[:2000]}\n\nCANDIDATES:\n{candidates}"),
     ]
-
     try:
         answer = llm.model.invoke(messages).content or ""
         best = int(_json_payload(answer).get("best", 1))
     except Exception as error:
         logger.warning("Code evaluator failed, using the top result: %s", error)
         return results[:1]
-
     if best <= 0:
         return []
-
     return [results[best - 1]] if best <= len(results) else results[:1]
 
 
-def prepare_code_context(
-    *,
-    query: str,
-    code: str = "",
-    context: str = "",
-    language: str = "",
-    history=None,
-    conversation_id: str = "",
-    correction: bool = False,
-    llm=None,
-) -> dict:
-    """Store new code, retrieve related snippets, and let the LLM pick the best."""
-
+def prepare_code_context(*, query: str, code: str = "", context: str = "",
+                         language: str = "", history=None, conversation_id: str = "",
+                         correction: bool = False, llm=None):
     is_correction = is_correction_request(query, history or [], explicit=correction)
     store = get_code_vector_store()
-    blocks = _collect_code_blocks(query=query, code=code, context=context)
-
+    blocks = _collect_code_blocks(query, code, context)
     for block in blocks:
-        store.ingest_code(
-            block["code"],
-            language=block.get("language") or language,
-            conversation_id=conversation_id,
-        )
-
+        store.ingest_code(block["code"], language=block["language"] or language,
+                          conversation_id=conversation_id)
     search_text = "\n\n".join(part for part in (query, code) if part).strip()[:4000]
-    retrieved = store.search(
-        search_text,
-        exclude_texts={normalize_text(block["code"]) for block in blocks},
-    )
+    retrieved = store.search(search_text,
+                             exclude_texts={normalize_text(block["code"]) for block in blocks})
     selected = _evaluate_context(search_text, retrieved, llm)
-
     return {
         "correction": is_correction,
         "correction_text": load_prompt("correction") if is_correction else "",
@@ -159,22 +97,13 @@ def prepare_code_context(
     }
 
 
-def finalize_code_correction(
-    *,
-    code: str = "",
-    explanation: str = "",
-    language: str = "",
-    conversation_id: str = "",
-) -> dict:
-    """Store the corrected answer after the model responds."""
-
+def finalize_code_correction(*, code: str = "", explanation: str = "", language: str = "",
+                             conversation_id: str = ""):
     return get_code_vector_store().record_correction(
-        code=code,
-        explanation=explanation,
-        language=language,
+        code=code, explanation=explanation, language=language,
         conversation_id=conversation_id,
     )
 
 
-def knowledge_stats() -> dict:
+def knowledge_stats():
     return get_code_vector_store().stats()
