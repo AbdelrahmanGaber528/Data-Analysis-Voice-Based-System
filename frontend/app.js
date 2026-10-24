@@ -58,7 +58,7 @@ const CONFIG = {
     minRecordSec: 0.4,
     maxTableRows: 200,          // rows drawn in a table
     maxStoredRows: 100,         // rows kept per answer in localStorage
-    timeoutMs: { default: 120000, transcribe: 180000 },
+    timeoutMs: { default: 120000, transcribe: 180000, code: 300000 },
 
     tableExts: ["csv", "xlsx"],
     notesExts: ["txt", "pdf"],
@@ -189,20 +189,20 @@ class ApiClient {
     }
 
     explain(query, history = []) {
-        return this._postJson(this.ep.explain, { query, history });
+        return this._postJson(this.ep.explain, { query, history }, this.timeouts.code);
     }
 
     generate(query, history = []) {
-        return this._postJson(this.ep.generate, { query, history });
+        return this._postJson(this.ep.generate, { query, history }, this.timeouts.code);
     }
 
     // ── internals ──
-    _postJson(path, body) {
+    _postJson(path, body, timeoutMs) {
         return this._request(path, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
-        });
+        }, timeoutMs);
     }
 
     async _request(path, options = {}, timeoutMs = this.timeouts.default) {

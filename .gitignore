@@ -8,6 +8,7 @@ __pycache__/
 assets/datasets/*
 assets/datasets_test/*
 src/assets/databases/
+src/assets/vectordb/
 # C extensions
 *.so
 
