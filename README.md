@@ -190,7 +190,6 @@ Voice is a first-class input: the browser records a 16 kHz WAV clip, Faster-Whis
 | Speech | Faster-Whisper with FFmpeg audio decoding |
 | LLM | LangChain + any OpenAI-compatible Chat Completions endpoint |
 | Data | pandas, SQLite, SQLAlchemy, openpyxl |
-| Operations | `manage.sh`, rotating file logging |
 
 ### Request flow
 
