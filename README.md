@@ -1,6 +1,6 @@
 # DA Voice — Voice-Based Data Analysis System
 
-## Abu-bakr soliman mini-rag Course : I built controllers & models , endpoints based on that course , but i didn't finished course yet ..
+### Abu-bakr soliman mini-rag Course : I built controllers & models , endpoints based on that course , but i didn't finished course yet .. . i thought it was good change to learn & build good arch from fantastic course .
 > **Ask your data, explain your code, and generate code — by voice or text, in one focused workspace.**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
