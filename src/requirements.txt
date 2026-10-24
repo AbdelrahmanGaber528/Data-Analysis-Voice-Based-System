@@ -8,6 +8,7 @@ langchain-openai
 langchain-core
 langchain-community
 langchain-text-splitters
+chromadb
 pandas
 numpy
 pydantic

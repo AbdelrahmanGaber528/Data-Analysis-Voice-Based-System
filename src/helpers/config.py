@@ -19,7 +19,15 @@ class Settings(BaseSettings):
     FILE_ALLOWED_EXTENSION : list[str]
     FILE_MAX_SIZE : int
     FILE_CHUNK_SIZE : int
-    
+
+    VECTOR_DB_DIR: str
+    RAG_TOP_K: int = 4
+    RAG_MIN_SCORE: float
+    RAG_MAX_CONTEXT_CHARS: int
+    CODE_CHUNK_SIZE: int
+    CODE_CHUNK_LINES: int
+    CODE_CHUNK_OVERLAP: int
+
     AUDIO_MAX_SIZE : int
     AUDIO_ALLOWED_EXTENSIONS : list[str]
     

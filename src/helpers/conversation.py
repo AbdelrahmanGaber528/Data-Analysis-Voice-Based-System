@@ -1,8 +1,3 @@
-"""Helpers for carrying a single conversation's context into LLM prompts.
-
-The server stays stateless: the frontend sends only the messages that belong
-to the active conversation, and these helpers keep that payload bounded.
-"""
 
 MAX_HISTORY_CHARS = 6000
 MAX_MESSAGE_CHARS = 3000
@@ -17,9 +12,6 @@ def sanitize_history(
     max_messages: int = MAX_HISTORY_MESSAGES,
 ):
     """Return a clean, bounded list of ``{"role", "content"}`` turns."""
-
-    if not isinstance(history, list):
-        return []
 
     cleaned = []
 
@@ -66,9 +58,6 @@ def format_history(history, **kwargs) -> str:
     """Render history as a plain-text block for prompts that expect text."""
 
     turns = sanitize_history(history, **kwargs)
-
-    if not turns:
-        return ""
 
     lines = ["CONVERSATION SO FAR (oldest to newest):"]
 

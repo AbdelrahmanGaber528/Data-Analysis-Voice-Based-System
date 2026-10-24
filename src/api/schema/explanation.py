@@ -9,4 +9,6 @@ class ExplainRequest(BaseModel):
     question: Optional[str] = None
     context: Optional[str] = None
     language: Optional[str] = None
+    conversation_id: Optional[str] = None
+    correction: bool = False
     history: list[dict] = Field(default_factory=list)
