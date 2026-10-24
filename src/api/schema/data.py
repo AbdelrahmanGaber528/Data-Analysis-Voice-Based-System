@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 class ProcessRequest(BaseModel):
@@ -13,3 +13,4 @@ class AnalyzeRequest(BaseModel):
     
     question : str
     limit : Optional[int] = None
+    history: list[dict] = Field(default_factory=list)

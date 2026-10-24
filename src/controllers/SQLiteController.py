@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 import sqlite3
@@ -6,9 +7,13 @@ import sqlite3
 import pandas as pd
 from sqlalchemy import create_engine
 
+from helpers.conversation import format_history
 from helpers.prompts import load_prompt
 from models import ProcessExtension
 from .BaseController import BaseController
+
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteController(BaseController):
@@ -16,6 +21,7 @@ class SQLiteController(BaseController):
     TABLE_NAME = "dataset"
     DEFAULT_MAX_RESULT_ROWS = 200
     MAX_RESULT_ROWS_CAP = 200
+    MAX_SQL_ATTEMPTS = 3
     TABULAR_EXTENSIONS = (ProcessExtension.CSV.value, ProcessExtension.XLSX.value)
 
     FORBIDDEN_SQL_KEYWORDS = {
@@ -129,22 +135,49 @@ class SQLiteController(BaseController):
 
 
 
-    def generate_sql(self, question: str, schema: str, llm):
+    def generate_sql(self, question: str, schema: str, llm, history=None):
+
+        history_text = format_history(history or [])
+        context_block = f"{history_text}\n\n" if history_text else ""
 
         messages = [
             {"role": "system", "content": load_prompt("sql")},
             {
                 "role": "user",
-                "content": f"DATABASE SCHEMA:\n{schema}\n\nUSER QUESTION:\n{question}",
+                "content": (
+                    f"{context_block}"
+                    f"DATABASE SCHEMA:\n{schema}\n\n"
+                    f"CURRENT QUESTION:\n{question}"
+                ),
             },
         ]
 
-        response = llm.chat(messages)
+        last_error = None
 
-        query_plan = self._parse_query_plan(response)
-        query_plan["sql"] = self._validate_query(query_plan["sql"])
+        # Free/auto-routed models occasionally answer with unrelated text
+        # (for example a safety classification). Retry until we get a real query.
+        for attempt in range(1, self.MAX_SQL_ATTEMPTS + 1):
 
-        return query_plan
+            response = llm.chat(messages)
+
+            try:
+                query_plan = self._parse_query_plan(response)
+                query_plan["sql"] = self._validate_query(query_plan["sql"])
+                return query_plan
+
+            except ValueError as e:
+                last_error = e
+                logger.warning(
+                    "SQL generation attempt %s/%s failed: %s | model response: %s",
+                    attempt,
+                    self.MAX_SQL_ATTEMPTS,
+                    e,
+                    (response or "")[:300].replace("\n", " "),
+                )
+
+        raise ValueError(
+            f"Could not generate a valid SQL query after {self.MAX_SQL_ATTEMPTS} attempts: {last_error}"
+        )
 
 
 
@@ -221,8 +254,8 @@ class SQLiteController(BaseController):
         payload = self._load_json(text)
 
         if isinstance(payload, dict):
-            sql = str(payload.get("sql", "")).strip()
-            explanation = str(payload.get("explanation", "")).strip()
+            sql = str(payload.get("sql") or payload.get("query") or payload.get("sql_query") or "").strip()
+            explanation = str(payload.get("explanation") or payload.get("reasoning") or "").strip()
         else:
             sql = self._extract_sql(text)
             explanation = ""
@@ -297,7 +330,7 @@ class SQLiteController(BaseController):
         return None
 
 
-
+    
     @staticmethod
     def _extract_sql(text: str):
 
@@ -320,6 +353,8 @@ class SQLiteController(BaseController):
             query = query.split(";", 1)[0].strip()
 
         return query
+
+
 
     def _validate_query(self, sql: str):
 
@@ -378,7 +413,7 @@ class SQLiteController(BaseController):
 
 
 
-    def analyze(self, question: str, llm, limit: int | None = None):
+    def analyze(self, question: str, llm, limit: int | None = None, history=None):
 
         if limit is not None:
             self.set_max_result_rows(limit)
@@ -386,7 +421,7 @@ class SQLiteController(BaseController):
         self.prepare_database()
 
         schema = self.get_schema()
-        query_plan = self.generate_sql(question, schema, llm)
+        query_plan = self.generate_sql(question, schema, llm, history=history)
 
         columns, results = self.execute_query(query_plan["sql"], limit=limit)
 

@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
+from langchain_core.messages import SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from api.schema.explanation import ExplainRequest
+from helpers.conversation import to_chat_messages
 from helpers.prompts import load_prompt
 
 
@@ -36,8 +38,9 @@ def explain_code(explain_request: ExplainRequest, request: Request):
 
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", load_prompt("explain")),
-        ("human", "{query}"),
+        SystemMessage(content=load_prompt("explain")),
+        MessagesPlaceholder("history"),
+        ("human", "CURRENT REQUEST:\n{query}"),
     ])
 
 
@@ -47,8 +50,10 @@ def explain_code(explain_request: ExplainRequest, request: Request):
         if llm is None or not hasattr(llm, "model"):
             raise ValueError("LLM not initialized")
 
+        history = to_chat_messages(explain_request.history)
+
         chain = prompt | llm.model | StrOutputParser()
-        text = chain.invoke({"query": query})
+        text = chain.invoke({"query": query, "history": history})
 
 
         return {

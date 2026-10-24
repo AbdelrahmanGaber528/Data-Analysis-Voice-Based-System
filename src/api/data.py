@@ -10,7 +10,7 @@ from .schema.data import ProcessRequest , AnalyzeRequest
 
 
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 
 
@@ -123,7 +123,12 @@ def analyze_data(dataset_id : str , analyze_request : AnalyzeRequest , request :
         
         sqlite_controller = SQLiteController(dataset_id)
         
-        analysis_result = sqlite_controller.analyze(question , request.app.state.llm , limit=analyze_request.limit)
+        analysis_result = sqlite_controller.analyze(
+            question,
+            request.app.state.llm,
+            limit=analyze_request.limit,
+            history=analyze_request.history,
+        )
         
     except FileNotFoundError as e :
         

@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from controllers import AudioController
 from models import ResponseMessage
 
-logger = logging.getLogger("uvicorn.error")
+logger = logging.getLogger(__name__)
 
 audio_router = APIRouter(prefix="/api/v1/audio", tags=["api_v1","audio"])
 

@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from api import base_router , data_router , audio_router , explain_router
+from api import base_router , data_router , audio_router , explain_router , generation_router
 from clients.whisper import WhisperClient
 from clients.llm import LLMClient
 from helpers.config import get_settings , Settings
@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     
     yield
     
-    logger.info("Shutting down DA Voice System...")
+    logger.info("Shutting down DA Voice System...") 
 
 
 app = FastAPI(lifespan=lifespan, title="DA Voice System" , description="data analysis platform to upload your data , and ask questions , apply queries , make descisions about it in same place ")
@@ -57,6 +57,7 @@ app.include_router(base_router)
 app.include_router(data_router)
 app.include_router(audio_router)
 app.include_router(explain_router)
+app.include_router(generation_router)
 
 
 logger.info("Routers registered")

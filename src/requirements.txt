@@ -2,10 +2,16 @@ faster-whisper
 python-dotenv
 fastapi
 uvicorn
+python-multipart
+aiofiles
 langchain-openai
 langchain-core
+langchain-community
+langchain-text-splitters
 pandas
+numpy
 pydantic
 SQLAlchemy
 pydantic-settings
 openpyxl
+pymupdf

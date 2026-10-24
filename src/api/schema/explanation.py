@@ -1,5 +1,5 @@
+from pydantic import BaseModel, Field
 from typing import Optional
-from pydantic import BaseModel
 
 
 class ExplainRequest(BaseModel):
@@ -9,4 +9,4 @@ class ExplainRequest(BaseModel):
     question: Optional[str] = None
     context: Optional[str] = None
     language: Optional[str] = None
-    history: list[dict] = []
+    history: list[dict] = Field(default_factory=list)
